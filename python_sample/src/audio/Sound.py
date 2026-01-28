@@ -1,10 +1,12 @@
 #Written By Carter Tem
 #No part of this class was done by me, Amerikranian. This is Carter's work alone.
+
 import math
 import sound_lib
 from sound_lib import output
 from sound_lib import stream
 o=output.Output()
+
 class sound():
  def __init__(self):
   self.handle=None

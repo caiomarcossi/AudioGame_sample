@@ -1,7 +1,10 @@
 #99.9% of this was not done by me, Amerikranian.
 #The functions and formulas for the sounds were written by Carter Tem to the best of my knowledge
 #The only thing I, Amerikranian added is keeping the sound's pitch, because I thought it would be useful.
+
 import math
+from utils.rotation import rotate_matrix
+
 def position_sound_1d(handle, listener_x, source_x, pan_step, volume_step):
 	position_sound_custom_1d(handle, listener_x, source_x, pan_step, volume_step, 0.0, 0.0)
 
@@ -87,14 +90,7 @@ def position_sound_custom_3d(handle, listener_x, listener_y, listener_z, source_
 	final_pan=start_pan
 	final_volume=start_volume
 	final_pitch=start_pitch
-	rotational_source_x=source_x
-	rotational_source_y=source_y
-	#First, we calculate the x and y based on the theta the listener is facing. 
-	if theta > 0.0:
-		rotational_source_x = (math.cos(theta) * (source_x-listener_x)) - (math.sin(theta) * (source_y-listener_y)) + listener_x
-		rotational_source_y = (math.sin(theta) * (source_x-listener_x)) + (math.cos(theta) * (source_y-listener_y)) + listener_y
-		source_x=rotational_source_x
-		source_y=rotational_source_y
+	source_x, source_y=rotate_matrix(source_x, source_y, theta, listener_x, listener_y)
 	#Next, we calculate the delta between the listener and the source.
 	if source_x<listener_x:
 		delta_x=listener_x-source_x

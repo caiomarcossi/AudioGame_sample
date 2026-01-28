@@ -4,7 +4,8 @@
 #The package can be found at the following URL: http://www.samtupy.com/dev/simple_3d_Sound_pool.zip
 #I did not create any part of this project, I simply acted as a translator of sorts.
 #If you wish to change any of the code below for optimizations and such feel free to do so, just let me, Amerikranian know.
-import Sound, Sound_positioning
+
+from . import Sound, Sound_positioning
 
 class Sound_pool_item:
 
@@ -37,7 +38,7 @@ class Sound_pool_item:
  def reset(self,pack=""):
   self.__init__()
 
- def update(self,listener_x,listener_y,listener_z,max_distance):
+ def update(self, listener_x, listener_y, listener_z, max_distance, rotation=0.0):
   if max_distance>0 and self.looping:
    total_distance=self.get_total_distance(listener_x,listener_y,listener_z)
    if total_distance>max_distance and self.handle.handle!=None:
@@ -50,12 +51,12 @@ class Sound_pool_item:
      pass
      return
     if self.handle.handle.position>0: self.handle.handle.position=self.start_offset
-    self.update_listener_position(listener_x,listener_y,listener_z)
+    self.update_listener_position(listener_x,listener_y,listener_z, rotation)
     if not self.paused: self.handle.play_looped()
     return
-  self.update_listener_position(listener_x,listener_y,listener_z)
+  self.update_listener_position(listener_x,listener_y,listener_z, rotation)
 
- def update_listener_position(self,listener_x,listener_y,listener_z):
+ def update_listener_position(self,listener_x,listener_y,listener_z, rotation=0.0):
   if self.handle.handle==None: return
   if self.stationary: return
   delta_left=self.x-self.left_range
@@ -80,7 +81,7 @@ class Sound_pool_item:
   elif listener_y>delta_forward: True_y=delta_forward
   if listener_z<delta_lower: True_z=delta_lower
   elif listener_z>delta_upper: True_z=delta_upper 
-  Sound_positioning.position_sound_custom_3d(self.handle, listener_x, listener_y, listener_z, True_x, True_y, True_z,0,self.pan_step, self.volume_step, self.behind_pitch_decrease, self.start_pan, self.start_volume, self.start_pitch,False)
+  Sound_positioning.position_sound_custom_3d(self.handle, listener_x, listener_y, listener_z, True_x, True_y, True_z,rotation,self.pan_step, self.volume_step, self.behind_pitch_decrease, self.start_pan, self.start_volume, self.start_pitch,False)
 
  def get_total_distance(self,listener_x,listener_y,listener_z):
   if self.stationary: return 0
@@ -113,7 +114,7 @@ class Sound_pool_item:
   if listener_z>True_z: distance+=(listener_z-True_z)
   return distance
 
-class Sound_pool:
+class SoundPool:
 
  def __init__(self):
   self.items=[] #The placeholder for the items
@@ -127,6 +128,7 @@ class Sound_pool:
   self.clean_frequency=3 #How often the pool should be cleaned
   self.packname = ""
   self.ext = ""
+  self.last_listener_rotation=0.0
 
  def play_stationary(self,filename,looping,persistent=False):
   return self.play_stationary_extended(filename, looping, 0, 0, 0, 100, persistent)
@@ -211,10 +213,10 @@ class Sound_pool:
   self.items.append(s)
   return s
 
- def play_3d(self,filename,   listener_x,   listener_y,   listener_z,   Sound_x,   Sound_y,   Sound_z,   looping,   persistent=False):
-  return self.play_extended_3d(filename, listener_x, listener_y, listener_z, Sound_x, Sound_y, Sound_z, 0, 0, 0, 0, 0, 0, looping, 0, 0, 0, 100, persistent) 
+ def play_3d(self,filename,   listener_x,   listener_y,   listener_z,   Sound_x,   Sound_y,   Sound_z, theta, looping,   persistent=False):
+  return self.play_extended_3d(filename, listener_x, listener_y, listener_z, Sound_x, Sound_y, Sound_z, 0, 0, 0, 0, 0, 0, theta, looping, 0, 0, 0, 100, persistent) 
 
- def play_extended_3d(self,filename,   listener_x,   listener_y,   listener_z,   Sound_x,   Sound_y,   Sound_z, left_range, right_range,   backward_range,   forward_range,   upper_range,   lower_range,   looping,   offset = 0.0, start_pan = 0.0, start_volume = 0.0, start_pitch = 100, persistent = False):
+ def play_extended_3d(self,filename,   listener_x,   listener_y,   listener_z,   Sound_x,   Sound_y,   Sound_z, left_range, right_range,   backward_range,   forward_range,   upper_range,   lower_range, theta, looping,   offset = 0.0, start_pan = 0.0, start_volume = 0.0, start_pitch = 100, persistent = False):
   self.clean_frequency-=1
   if self.clean_frequency<=0: self.clean_unused()
   s=Sound_pool_item(filename=filename,x=Sound_x,y=Sound_y,z=Sound_z,looping=looping,pan_step=self.pan_step,volume_step=self.volume_step,behind_pitch_decrease=self.behind_pitch_decrease,start_pan=start_pan,start_volume=start_volume,start_pitch=start_pitch,left_range=left_range,right_range=right_range,backward_range=backward_range,forward_range=forward_range,lower_range=lower_range,upper_range=upper_range,is_3d=True,persistent=persistent,start_offset=offset)
@@ -226,7 +228,7 @@ class Sound_pool:
     self.last_listener_x=listener_x 
     self.last_listener_y=listener_y 
     self.last_listener_z=listener_z 
-    s.update(listener_x, listener_y, listener_z, self.max_distance) 
+    s.update(listener_x, listener_y, listener_z, self.max_distance, theta)
     self.items.append(s)
     return s
   try:
@@ -238,7 +240,7 @@ class Sound_pool:
   self.last_listener_x=listener_x 
   self.last_listener_y=listener_y 
   self.last_listener_z=listener_z 
-  s.update(listener_x, listener_y, listener_z, self.max_distance) 
+  s.update(listener_x, listener_y, listener_z, self.max_distance, theta)
   if looping: s.handle.play_looped() 
   else: s.handle.play() 
   self.items.append(s)
@@ -289,12 +291,13 @@ class Sound_pool:
  def update_listener_2d(self,listener_x,   listener_y):
   self.update_listener_3d(listener_x, listener_y, 0) 
 
- def update_listener_3d(self,listener_x,   listener_y,   listener_z):
+ def update_listener_3d(self,listener_x,   listener_y,   listener_z, rotation=0.0):
   if len(self.items)==0: return 
   self.last_listener_x=listener_x 
   self.last_listener_y=listener_y 
   self.last_listener_z=listener_z 
-  for i in self.items: i.update(listener_x, listener_y, listener_z, self.max_distance)
+  self.last_listener_rotation=rotation
+  for i in self.items: i.update(listener_x, listener_y, listener_z, self.max_distance, rotation)
 
  def update_Sound_1d(self,s,   x):
   return self.update_Sound_3d(s, x, 0, 0) 
@@ -356,5 +359,3 @@ class Sound_pool:
 
  def set_ext(self, extension):
   self.ext = extension
-
-p=Sound_pool()
